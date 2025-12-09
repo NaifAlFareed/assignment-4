@@ -1,0 +1,27 @@
+{
+  "name": "assignment-4",
+  "version": "1.0.0",
+  "description": "Assignment 4 polished portfolio (HTML/CSS/JS) with API demos, docs, and GitHub Pages deployment.",
+  "main": "index.js",
+  "scripts": {
+    "start": "serve -l 4173 .",
+    "serve": "serve -l 4173 .",
+    "lighthouse": "lighthouse http://localhost:4173 --preset=desktop --output=json --output=html --output-path=assets/images/a4-lighthouse --screenEmulation.disabled=true --throttling-method=provided"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NaifAlFareed/assignment-4.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NaifAlFareed/assignment-4/issues"
+  },
+  "homepage": "https://github.com/NaifAlFareed/assignment-4#readme",
+  "devDependencies": {
+    "lighthouse": "^13.0.1",
+    "serve": "^14.2.5",
+    "sharp-cli": "^5.2.0"
+  }
+}
