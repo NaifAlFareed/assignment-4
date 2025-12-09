@@ -1,46 +1,111 @@
-// =====================================
-// THEME TOGGLE (light / dark)
-// =====================================
-const bodyEl = document.body;
-const themeBtn = document.getElementById("themeToggle");
+﻿// =============================
+// Theme toggle (root data-theme)
+// =============================
+(function () {
+  const root = document.documentElement;
+  const btn = document.getElementById("theme-toggle");
+  const themeColor = document.querySelector('meta[name="theme-color"]');
 
-function updateThemeButton() {
-  const isLight = bodyEl.classList.contains("light");
-  if (themeBtn) {
-    themeBtn.textContent = isLight ? "Switch to Dark" : "Switch to Light";
-    themeBtn.setAttribute("aria-pressed", isLight ? "false" : "true");
+  function setTheme(theme, skipSave) {
+    root.dataset.theme = theme;
+    if (btn) {
+      btn.textContent = theme === "dark" ? "Light theme" : "Dark theme";
+      btn.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+    }
+    if (themeColor) {
+      themeColor.setAttribute("content", theme === "dark" ? "#0b0f14" : "#0ea76d");
+    }
+    if (!skipSave) {
+      localStorage.setItem("theme", theme);
+    }
   }
-}
 
-function applyTheme(theme, skipSave) {
-  if (theme === "dark") {
-    bodyEl.classList.remove("light");
-  } else {
-    bodyEl.classList.add("light");
-  }
-  if (!skipSave) {
-    localStorage.setItem("theme", theme);
-  }
-  updateThemeButton();
-}
-
-(function initTheme() {
-  const savedTheme = localStorage.getItem("theme");
+  const saved = localStorage.getItem("theme");
   const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const initial = savedTheme || (prefersDark ? "dark" : "light");
-  applyTheme(initial, true);
+  setTheme(saved || (prefersDark ? "dark" : "light"), true);
+
+  btn?.addEventListener("click", () => {
+    const next = root.dataset.theme === "light" ? "dark" : "light";
+    setTheme(next);
+  });
 })();
 
-themeBtn?.addEventListener("click", () => {
-  const isLight = bodyEl.classList.contains("light");
-  applyTheme(isLight ? "dark" : "light");
+// =============================
+// Active link highlight on scroll
+// =============================
+(function () {
+  const navLinks = Array.from(document.querySelectorAll('.nav a[href^="#"]'));
+  if (!navLinks.length) return;
+
+  const sections = navLinks
+    .map((link) => document.querySelector(link.getAttribute("href")))
+    .filter((section) => section instanceof HTMLElement);
+
+  function setActive(id) {
+    navLinks.forEach((link) => {
+      const match = link.getAttribute("href") === `#${id}`;
+      link.classList.toggle("active", match);
+      link.setAttribute("aria-current", match ? "true" : "false");
+    });
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible?.target?.id) {
+        setActive(visible.target.id);
+      }
+    },
+    { threshold: [0.35, 0.6], rootMargin: "-30% 0px -40% 0px" },
+  );
+
+  sections.forEach((section) => observer.observe(section));
+})();
+
+// =============================
+// Smooth scroll for anchors
+// =============================
+document.querySelectorAll('a[href^="#"]').forEach((a) => {
+  a.addEventListener("click", (e) => {
+    const id = a.getAttribute("href");
+    if (!id || id === "#") return;
+    const target = document.querySelector(id);
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!target.hasAttribute("tabindex")) {
+        target.setAttribute("tabindex", "-1");
+      }
+      target.focus({ preventScroll: true });
+    }
+  });
 });
 
-updateThemeButton();
+function runOnVisible(element, callback) {
+  if (!element || typeof IntersectionObserver === "undefined") {
+    callback();
+    return;
+  }
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        observer.disconnect();
+        callback();
+      }
+    },
+    { rootMargin: "200px 0px" },
+  );
+  observer.observe(element);
+}
 
-// =====================================
-// SESSION TIMER
-// =====================================
+const githubSection = document.getElementById("github");
+const insightsSection = document.getElementById("insights");
+
+// =============================
+// Session timer
+// =============================
 const sessionTimerEl = document.getElementById("sessionTimer");
 if (sessionTimerEl) {
   const start = Date.now();
@@ -50,9 +115,9 @@ if (sessionTimerEl) {
     if (mins >= 60) {
       const hours = Math.floor(mins / 60);
       const remMins = mins % 60;
-      return `${hours}h ${remMins}m ${secs.toString().padStart(2, "0")}s`;
+      return `${hours}h ${remMins}m ${secs.toString().padStart(2, "0")}`;
     }
-    return `${mins}m ${secs.toString().padStart(2, "0")}s`;
+    return `${mins}m ${secs.toString().padStart(2, "0")}`;
   };
 
   const updateTimer = () => {
@@ -64,23 +129,18 @@ if (sessionTimerEl) {
   setInterval(updateTimer, 1000);
 }
 
-// =====================================
-// USER GREETING (persisted)
-// =====================================
+// =============================
+// Greeting persistence
+// =============================
 const greetingForm = document.getElementById("greetingForm");
 const greetingInput = document.getElementById("greetingInput");
 const greetingMessage = document.getElementById("greetingMessage");
 
 function renderGreeting(name) {
   if (!greetingMessage) return;
-  if (name) {
-    greetingMessage.textContent = `Welcome back, ${name}!`;
-    if (greetingInput) {
-      greetingInput.value = name;
-    }
-  } else {
-    greetingMessage.textContent = "Welcome! Tell me your name so I can greet you next time.";
-  }
+  greetingMessage.textContent = name
+    ? `Welcome back, ${name}!`
+    : "Welcome! Tell me your name so I can greet you next time.";
 }
 
 const storedName = localStorage.getItem("greetingName") || "";
@@ -97,13 +157,12 @@ greetingForm?.addEventListener("submit", (e) => {
   renderGreeting(name);
 });
 
-// =====================================
-// COLLAPSIBLE PROJECT DETAILS
-// =====================================
+// =============================
+// Collapsible project details
+// =============================
 document.querySelectorAll(".project-card").forEach((card) => {
   const btn = card.querySelector(".toggle-details");
   const details = card.querySelector(".details");
-
   if (!btn || !details) return;
 
   btn.addEventListener("click", () => {
@@ -113,9 +172,9 @@ document.querySelectorAll(".project-card").forEach((card) => {
   });
 });
 
-// =====================================
-// PROJECT FILTERING + SEARCH + SORT
-// =====================================
+// =============================
+// Project filtering + search + sort
+// =============================
 const filterButtons = document.querySelectorAll(".filter-btn");
 const projectCards = Array.from(document.querySelectorAll(".project-card"));
 const projectsGrid = document.getElementById("projectsGrid");
@@ -133,11 +192,8 @@ function cardMatches(card, category, query) {
   const cardCat = card.getAttribute("data-category");
   const matchesCategory = category === "all" || category === cardCat;
   const normalizedQuery = query.trim().toLowerCase();
-
   if (!normalizedQuery) return matchesCategory;
-
-  const text = card.textContent.toLowerCase();
-  return matchesCategory && text.includes(normalizedQuery);
+  return matchesCategory && card.textContent.toLowerCase().includes(normalizedQuery);
 }
 
 function sortCards(cards, sortBy) {
@@ -145,11 +201,7 @@ function sortCards(cards, sortBy) {
   if (sortBy === "title") {
     copy.sort((a, b) => a.querySelector("h3").textContent.localeCompare(b.querySelector("h3").textContent));
   } else if (sortBy === "complexity") {
-    copy.sort((a, b) => {
-      const aLevel = complexityRank[a.dataset.level] || 0;
-      const bLevel = complexityRank[b.dataset.level] || 0;
-      return bLevel - aLevel;
-    });
+    copy.sort((a, b) => (complexityRank[b.dataset.level] || 0) - (complexityRank[a.dataset.level] || 0));
   } else {
     copy.sort((a, b) => (Number(b.dataset.year) || 0) - (Number(a.dataset.year) || 0));
   }
@@ -190,12 +242,11 @@ filterButtons.forEach((btn) => {
 
 projectSearchInput?.addEventListener("input", refreshProjects);
 projectSortSelect?.addEventListener("change", refreshProjects);
-
 refreshProjects();
 
-// =====================================
-// CONTACT FORM VALIDATION / FEEDBACK
-// =====================================
+// =============================
+// Contact form validation
+// =============================
 const formEl = document.querySelector(".form");
 const formStatusBox = document.querySelector(".form-status");
 const MIN_MESSAGE_LENGTH = 10;
@@ -204,11 +255,7 @@ function setFieldState(fieldName, message, ok) {
   const hint = document.querySelector(`.input-hint[data-for="${fieldName}"]`);
   if (!hint) return;
   hint.textContent = message || "";
-  if (ok) {
-    hint.classList.add("ok");
-  } else {
-    hint.classList.remove("ok");
-  }
+  hint.classList.toggle("ok", Boolean(ok));
 }
 
 function validateEmailFormat(email) {
@@ -219,8 +266,7 @@ function validateEmailFormat(email) {
 function resetFormStatus() {
   if (!formStatusBox) return;
   formStatusBox.textContent = "";
-  formStatusBox.classList.remove("error");
-  formStatusBox.classList.remove("success");
+  formStatusBox.classList.remove("error", "success");
 }
 
 if (formEl) {
@@ -240,30 +286,21 @@ if (formEl) {
 
     let valid = true;
 
-    if (!nameVal) {
-      valid = false;
-      setFieldState("name", "Please enter your name.", false);
-    } else if (nameVal.length < 2) {
+    if (nameVal.length < 2) {
       valid = false;
       setFieldState("name", "Name must be at least 2 characters.", false);
     } else {
       setFieldState("name", "Looks good.", true);
     }
 
-    if (!emailVal) {
-      valid = false;
-      setFieldState("email", "Please enter your email.", false);
-    } else if (!validateEmailFormat(emailVal)) {
+    if (!validateEmailFormat(emailVal)) {
       valid = false;
       setFieldState("email", "Please enter a valid email address.", false);
     } else {
       setFieldState("email", "Looks good.", true);
     }
 
-    if (!msgVal) {
-      valid = false;
-      setFieldState("message", "Please enter a message.", false);
-    } else if (msgVal.length < MIN_MESSAGE_LENGTH) {
+    if (msgVal.length < MIN_MESSAGE_LENGTH) {
       valid = false;
       setFieldState("message", `Message must be at least ${MIN_MESSAGE_LENGTH} characters.`, false);
     } else {
@@ -273,7 +310,6 @@ if (formEl) {
     if (!valid) {
       if (formStatusBox) {
         formStatusBox.textContent = "Please fix the errors and try again.";
-        formStatusBox.classList.remove("success");
         formStatusBox.classList.add("error");
       }
       return;
@@ -281,46 +317,29 @@ if (formEl) {
 
     if (formStatusBox) {
       formStatusBox.textContent = "Thanks! Your message has been recorded locally.";
-      formStatusBox.classList.remove("error");
       formStatusBox.classList.add("success");
     }
 
     nameInput.value = "";
     emailInput.value = "";
     msgInput.value = "";
-
     setFieldState("name", "", false);
     setFieldState("email", "", false);
     setFieldState("message", "", false);
   });
 }
 
-// =====================================
-// FOOTER YEAR
-// =====================================
+// =============================
+// Footer year
+// =============================
 const yearSpan = document.getElementById("year");
 if (yearSpan) {
   yearSpan.textContent = new Date().getFullYear();
 }
 
-// =====================================
-// SMOOTH SCROLL FALLBACK
-// =====================================
-document.querySelectorAll('a[href^="#"]').forEach((a) => {
-  a.addEventListener("click", (e) => {
-    const id = a.getAttribute("href");
-    if (!id || id === "#") return;
-    const target = document.querySelector(id);
-    if (target) {
-      e.preventDefault();
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  });
-});
-
-// =====================================
-// GITHUB API: FETCH + FILTER + SORT
-// =====================================
+// =============================
+// GitHub API
+// =============================
 const githubUserForm = document.getElementById("githubUserForm");
 const githubUsernameInput = document.getElementById("githubUsername");
 const repoListEl = document.getElementById("repoList");
@@ -329,14 +348,11 @@ const repoErrorEl = document.getElementById("repoError");
 const repoEmptyEl = document.getElementById("repoEmpty");
 const languageFilterSelect = document.getElementById("languageFilter");
 const sortSelect = document.getElementById("sortSelect");
-
 let reposCache = [];
 let currentUsername = "";
 
 function setRepoStatus(message) {
-  if (repoStatusEl) {
-    repoStatusEl.textContent = message;
-  }
+  if (repoStatusEl) repoStatusEl.textContent = message;
 }
 
 function showRepoError(message) {
@@ -353,15 +369,11 @@ function clearRepoError() {
 
 function updateLanguageOptions(repos) {
   if (!languageFilterSelect) return;
-
   const languages = new Set();
   let hasOther = false;
   repos.forEach((repo) => {
-    if (repo.language) {
-      languages.add(repo.language);
-    } else {
-      hasOther = true;
-    }
+    if (repo.language) languages.add(repo.language);
+    else hasOther = true;
   });
 
   const sorted = Array.from(languages).sort((a, b) => a.localeCompare(b));
@@ -380,10 +392,10 @@ function updateLanguageOptions(repos) {
   });
 
   if (hasOther) {
-    const otherOpt = document.createElement("option");
-    otherOpt.value = "Other";
-    otherOpt.textContent = "Other";
-    languageFilterSelect.appendChild(otherOpt);
+    const other = document.createElement("option");
+    other.value = "Other";
+    other.textContent = "Other";
+    languageFilterSelect.appendChild(other);
   }
 }
 
@@ -395,7 +407,10 @@ function formatDate(dateStr) {
 
 function buildRepoCard(repo) {
   const li = document.createElement("li");
-  li.className = "repo-card";
+  li.className = "card repo-card";
+
+  const body = document.createElement("div");
+  body.className = "card-body";
 
   const titleRow = document.createElement("div");
   titleRow.className = "repo-title";
@@ -412,12 +427,12 @@ function buildRepoCard(repo) {
   visibility.textContent = repo.private ? "Private" : "Public";
   titleRow.appendChild(visibility);
 
-  li.appendChild(titleRow);
+  body.appendChild(titleRow);
 
   const desc = document.createElement("p");
   desc.className = "repo-desc";
   desc.textContent = repo.description || "No description provided.";
-  li.appendChild(desc);
+  body.appendChild(desc);
 
   const meta = document.createElement("div");
   meta.className = "repo-meta";
@@ -437,7 +452,8 @@ function buildRepoCard(repo) {
   updated.textContent = `Updated ${formatDate(repo.updated_at)}`;
   meta.appendChild(updated);
 
-  li.appendChild(meta);
+  body.appendChild(meta);
+  li.appendChild(body);
   return li;
 }
 
@@ -468,20 +484,15 @@ function renderRepos() {
 
   if (sorted.length === 0) {
     repoEmptyEl?.classList.remove("hidden");
-    if (currentUsername) {
-      setRepoStatus(`No repos match the filters for ${currentUsername}.`);
-    }
+    if (currentUsername) setRepoStatus(`No repos match the filters for ${currentUsername}.`);
     return;
   }
 
   repoEmptyEl?.classList.add("hidden");
-  if (currentUsername) {
-    setRepoStatus(`Showing ${sorted.length} repos for ${currentUsername}.`);
-  }
+  if (currentUsername) setRepoStatus(`Showing ${sorted.length} repos for ${currentUsername}.`);
+
   const frag = document.createDocumentFragment();
-  sorted.forEach((repo) => {
-    frag.appendChild(buildRepoCard(repo));
-  });
+  sorted.forEach((repo) => frag.appendChild(buildRepoCard(repo)));
   repoListEl.appendChild(frag);
 }
 
@@ -490,7 +501,6 @@ async function fetchRepos(username) {
     showRepoError("Please enter a GitHub username.");
     return;
   }
-
   if (!repoListEl) return;
 
   currentUsername = username;
@@ -507,11 +517,8 @@ async function fetchRepos(username) {
 
     if (!response.ok) {
       let message = "Unable to load repositories right now.";
-      if (response.status === 404) {
-        message = "GitHub user not found.";
-      } else if (response.status === 403) {
-        message = "Rate limit reached. Please try again later.";
-      }
+      if (response.status === 404) message = "GitHub user not found.";
+      else if (response.status === 403) message = "Rate limit reached. Please try again later.";
       throw new Error(message);
     }
 
@@ -546,14 +553,12 @@ const initialUsername =
   (githubUsernameInput ? githubUsernameInput.value.trim() : "") ||
   "NaifAlFareed";
 
-if (githubUsernameInput) {
-  githubUsernameInput.value = initialUsername;
-}
-fetchRepos(initialUsername);
+if (githubUsernameInput) githubUsernameInput.value = initialUsername;
+runOnVisible(document.getElementById("github"), () => fetchRepos(initialUsername));
 
-// =====================================
-// WEATHER API (Open-Meteo)
-// =====================================
+// =============================
+// Weather API (Open-Meteo)
+// =============================
 const weatherForm = document.getElementById("weatherForm");
 const weatherCityInput = document.getElementById("weatherCity");
 const weatherStatusEl = document.getElementById("weatherStatus");
@@ -564,6 +569,10 @@ const weatherUnitEl = document.getElementById("weatherUnit");
 const weatherLocationEl = document.getElementById("weatherLocation");
 const weatherDetailsEl = document.getElementById("weatherDetails");
 const DEFAULT_CITY = "Dhahran";
+
+if (weatherStatusEl) {
+  weatherStatusEl.textContent = "Weather loads when this section is in view or on request.";
+}
 
 const WEATHER_CODES = {
   0: "Clear sky",
@@ -588,9 +597,7 @@ function describeWeather(code) {
 }
 
 function setWeatherStatus(message) {
-  if (weatherStatusEl) {
-    weatherStatusEl.textContent = message;
-  }
+  if (weatherStatusEl) weatherStatusEl.textContent = message;
 }
 
 function showWeatherError(message) {
@@ -608,9 +615,9 @@ function clearWeatherError() {
 function renderWeather(data, locationLabel) {
   if (!weatherCard || !weatherTempEl || !weatherUnitEl || !weatherLocationEl || !weatherDetailsEl) return;
   weatherTempEl.textContent = Math.round(data.temperature_2m);
-  weatherUnitEl.textContent = "°C";
+  weatherUnitEl.textContent = "\u00b0C";
   weatherLocationEl.textContent = locationLabel;
-  weatherDetailsEl.textContent = `${describeWeather(data.weather_code)} • Humidity ${data.relative_humidity_2m}% • Wind ${Math.round(data.wind_speed_10m)} km/h`;
+  weatherDetailsEl.textContent = `${describeWeather(data.weather_code)} - Humidity ${data.relative_humidity_2m}% - Wind ${Math.round(data.wind_speed_10m)} km/h`;
   weatherCard.classList.remove("hidden");
 }
 
@@ -630,15 +637,11 @@ async function fetchWeather(city) {
       `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(trimmed)}&count=1&language=en&format=json`,
     );
 
-    if (!geoResponse.ok) {
-      throw new Error("Unable to look up that city right now.");
-    }
+    if (!geoResponse.ok) throw new Error("Unable to look up that city right now.");
 
     const geoData = await geoResponse.json();
     const first = geoData?.results?.[0];
-    if (!first) {
-      throw new Error("City not found. Try another spelling.");
-    }
+    if (!first) throw new Error("City not found. Try another spelling.");
 
     const { latitude, longitude, name, country } = first;
     setWeatherStatus("Fetching forecast...");
@@ -647,15 +650,11 @@ async function fetchWeather(city) {
       `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto`,
     );
 
-    if (!weatherResponse.ok) {
-      throw new Error("Weather service unavailable right now.");
-    }
+    if (!weatherResponse.ok) throw new Error("Weather service unavailable right now.");
 
     const weatherData = await weatherResponse.json();
     const current = weatherData?.current;
-    if (!current) {
-      throw new Error("No forecast returned for that location.");
-    }
+    if (!current) throw new Error("No forecast returned for that location.");
 
     renderWeather(current, `${name}, ${country}`);
     setWeatherStatus(`Updated just now for ${name}.`);
@@ -672,14 +671,11 @@ weatherForm?.addEventListener("submit", (e) => {
 });
 
 const initialCity = localStorage.getItem("weatherCity") || DEFAULT_CITY;
-if (weatherCityInput) {
-  weatherCityInput.value = initialCity;
-}
-fetchWeather(initialCity);
+if (weatherCityInput) weatherCityInput.value = initialCity;
 
-// =====================================
-// QUOTE API (Quotable)
-// =====================================
+// =============================
+// Quotes API
+// =============================
 const quoteTextEl = document.getElementById("quoteText");
 const quoteAuthorEl = document.getElementById("quoteAuthor");
 const quoteRefreshBtn = document.getElementById("quoteRefresh");
@@ -687,7 +683,13 @@ const quoteSaveBtn = document.getElementById("quoteSave");
 const quoteStatusEl = document.getElementById("quoteStatus");
 const favoriteQuoteEl = document.getElementById("favoriteQuote");
 
-// Local fallback quotes for offline or blocked requests
+if (quoteStatusEl) {
+  quoteStatusEl.textContent = "Quotes load when this section is visible.";
+}
+if (quoteTextEl) {
+  quoteTextEl.textContent = "Quote will appear after loading.";
+}
+
 const FALLBACK_QUOTES = [
   { content: "Small daily progress beats occasional sprints.", author: "Naif" },
   { content: "Ship it, learn, and improve on the next iteration.", author: "Naif" },
@@ -696,9 +698,7 @@ const FALLBACK_QUOTES = [
 ];
 
 function showQuoteStatus(message) {
-  if (quoteStatusEl) {
-    quoteStatusEl.textContent = message;
-  }
+  if (quoteStatusEl) quoteStatusEl.textContent = message;
 }
 
 function setQuote(content, author) {
@@ -728,9 +728,7 @@ async function loadQuote() {
     const response = await fetch("https://api.quotable.io/random?tags=inspirational|success", {
       signal: controller.signal,
     });
-    if (!response.ok) {
-      throw new Error("Quote service unavailable.");
-    }
+    if (!response.ok) throw new Error("Quote service unavailable.");
     const data = await response.json();
     setQuote(data.content, data.author);
     showQuoteStatus("Fresh quote loaded.");
@@ -739,6 +737,7 @@ async function loadQuote() {
     setQuote(fallback.content, fallback.author);
     showQuoteStatus("Network blocked or offline. Using a local quote.");
   }
+
   clearTimeout(timeout);
 }
 
@@ -757,4 +756,9 @@ quoteSaveBtn?.addEventListener("click", () => {
 });
 
 renderFavoriteQuote();
-loadQuote();
+runOnVisible(insightsSection || document.body, () => {
+  fetchWeather(initialCity);
+  loadQuote();
+});
+
+
