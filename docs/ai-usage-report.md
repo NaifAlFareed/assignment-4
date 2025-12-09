@@ -1,29 +1,20 @@
-# AI Usage Report – Assignment 3
+﻿# AI Usage Report — Assignment 4
 
-## Tools Used
-- ChatGPT (GPT-5) via Codex CLI.
+## Tooling
+- ChatGPT (GPT-5) via Codex CLI for planning, copy review, refactors, and documentation wording.
 
-## Prompts & Outputs
-- Asked for help mapping assignment requirements to concrete features (multi-API ideas, state management, validation).
-- Requested wording for documentation sections (README, technical notes) to keep them concise and student-written.
-- Sought suggestions for resilient weather + quotes API usage without API keys.
+## Sessions
+### 1) Assignment 4 polish (this submission)
+- **Prompt**: Asked Codex to upgrade the A3 portfolio to production quality (semantic layout, theme toggle, spacing/typography cleanup, accessibility/performance targets, docs, and Pages readiness).
+- **Output received**: Proposed new HTML structure with meta tags, CSS variable-driven theme system, active-link highlighting, WebP image flow, and doc outlines for README/technical docs/presentation.
+- **My edits**: Adjusted copy to keep my voice, rephrased bullets for clarity, tightened spacing scale, swapped bullets to ASCII-only, and rewrote weather/status strings. Chose specific colors, spacing, and clamp values myself after reviewing the suggestions.
+- **What I learned**: Sharpened my process for using `data-theme` on `<html>` with CSS variables to avoid layout shifts, and refreshed the habit of pairing smooth scroll with focus management for accessibility.
 
-## My Edits & Understanding
-- Rewrote all HTML/CSS/JS manually to match my structure and naming.
-- Adjusted API error handling, storage keys, and UI text to keep it consistent with my portfolio tone.
-- Added my own project cards, session timer, search/sort logic, and layout tweaks after receiving ideas.
-- Verified every API endpoint is public/no-key and safe for the assignment.
+### 2) Earlier A3 iteration (reference)
+- **Prompt**: Brainstormed multi-API ideas (GitHub/weather/quotes), localStorage usage, and documentation wording for Assignment 3.
+- **Output received**: Suggestions on API endpoints, validation hints, and doc structure.
+- **My edits**: Rebuilt the code to fit my naming/layout, rewrote all copy, and added my own cards/timers.
+- **What I learned**: Combining multiple public APIs without keys and coordinating UI filters/sorts in vanilla JS.
 
-## Benefits
-- Faster brainstorming for advanced features that still fit a student portfolio.
-- Clearer documentation phrasing and checklist generation for testing.
-- Time saved on mapping weather codes and deciding on quotable endpoints.
-
-## Challenges
-- Keeping the UI “student-made” while still polished; required trimming overly formal AI wording.
-- Ensuring all new features stayed lightweight without extra libraries.
-
-## Learning Outcomes
-- Practiced combining multiple APIs with client-side state and filters.
-- Improved comfort with DOM reordering for search/sort flows without frameworks.
-- Strengthened habit of documenting AI involvement transparently.
+## Ethics & Ownership
+- All code/content was reviewed and edited by me. AI assistance was used for ideation and wording; final implementation and verification remain my responsibility.
